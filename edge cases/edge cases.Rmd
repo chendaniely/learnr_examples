@@ -1,0 +1,214 @@
+---
+title: "Tutorial"
+output: learnr::tutorial
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(grader)
+library(tidyr)
+library(tibble)
+library(ggplot2)
+
+knitr::opts_chunk$set(echo = FALSE)
+learnr::tutorial_options(exercise.checker = grader::grade_learnr)
+```
+
+
+## Unpipe `~`
+
+```{r tidyr1, exercise = TRUE}
+who %>%
+  tidyr::gather(key, value, new_sp_m014:newrel_f65, na.rm = FALSE)
+```
+
+
+```{r tidyr1-solution}
+who %>%
+  tidyr::gather(key, value, new_sp_m014:newrel_f65, na.rm = TRUE)
+```
+
+```{r tidyr1-check}
+grader::check_code()
+```
+
+## Tidyr tidyselect always correct
+
+### This is broken (always returns true)
+
+```{r gather-narm-true, exercise=TRUE}
+gather(who, key, value, new_sp_m014:newrel_f65, na.rm = FALSE)
+```
+
+```{r gather-narm-true-solution}
+gather(who, key, value, new_sp_m014:newrel_f65, na.rm = TRUE)
+```
+
+```{r gather-narm-true-check}
+grader::check_code()
+```
+
+### This is not broken
+
+```{r gather-narm-works, exercise=TRUE}
+tidyr::gather(who, key, value, na.rm = FALSE)
+```
+
+```{r gather-narm-works-solution}
+tidyr::gather(who, key, value, na.rm = TRUE)
+```
+
+```{r gather-narm-works-check}
+grader::check_code()
+```
+
+### This works
+
+```{r gather-narm-works2, exercise=TRUE}
+tidyr::gather(who, key1, value, new_sp_m014:newrel_f65)
+```
+
+```{r gather-narm-works2-solution}
+tidyr::gather(who, key, value, new_sp_m014:newrel_f65)
+```
+
+```{r gather-narm-works2-check}
+grader::check_code()
+```
+
+### This is broken
+
+```{r gather-narm-works3, exercise=TRUE}
+tidyr::gather(who, key, value, new_sp_m014:newrel_f65, convert = TRUE)
+```
+
+```{r gather-narm-works3-solution}
+tidyr::gather(who, key, value, new_sp_m014:newrel_f65, convert = FALSE)
+```
+
+```{r gather-narm-works3-check}
+grader::check_code()
+```
+
+## Maybe has to do with `unpipe`
+
+```{r}
+grader:::unpipe(
+  quote(tidyr::gather(who, key, value, new_sp_m014:newrel_f65, convert = FALSE))
+)
+```
+
+```{r}
+grader:::unpipe(
+  quote(who %>% tidyr::gather(key, value, new_sp_m014:newrel_f65, convert = FALSE))
+)
+```
+
+## `order_calls`
+
+```{r}
+t1 <- rev(
+  grader:::order_calls(
+    grader:::unpipe_all(
+      quote(
+        tidyr::gather(who, key, value, new_sp_m014:newrel_f65, convert = TRUE)
+      )
+    )
+  )
+)
+```
+
+```{r}
+t2 <- rev(
+  grader:::order_calls(
+    grader:::unpipe_all(
+      quote(
+        who %>% tidyr::gather(key, value, new_sp_m014:newrel_f65, convert = TRUE)
+      )
+    )
+  )
+)
+```
+
+```{r}
+identical(t1, t2)
+```
+
+
+## Colon things -- works
+
+But this works...
+
+```{r c_range, exercise=TRUE}
+c(1:5, recursive = TRUE)
+```
+
+```{r c_range-solution}
+c(1:5, recursive = FALSE)
+```
+
+```{r c_range-check}
+grader::check_code()
+```
+
+
+## tibble::tribble -- works
+
+```{r tribble, exercise=TRUE}
+tribble(
+  ~colA, ~colB,
+  "a",   1,
+  "b",   2,
+  "c",   9
+)
+```
+
+```{r tribble-solution}
+tribble(
+  ~colA, ~colB,
+  "a",   1,
+  "b",   2,
+  "c",   3
+)
+```
+
+```{r tribble-check}
+grader::check_code()
+```
+
+## Pipe to indentity
+
+### tidyverse
+
+```{r pipe_identity, exercise=TRUE}
+tidyr::who %>%
+  dplyr::select(country:year) %>%
+  {.}
+```
+
+```{r pipe_identity-solution}
+tidyr::who %>%
+  dplyr::select(country:year)
+```
+
+```{r pipe_identity-check}
+grader::check_code()
+```
+
+### ggplot2
+
+```{r pipe_identity_ggplot, exercise=TRUE}
+ggplot(data = diamonds[1:500, ], aes(x = carat, y = price)) +
+  geom_point() +
+  NULL
+```
+
+```{r pipe_identity_ggplot-solution}
+ggplot(data = diamonds[1:500, ], aes(x = carat, y = price)) +
+  geom_point()
+```
+
+```{r pipe_identity_ggplot-check}
+grader::check_code()
+```
