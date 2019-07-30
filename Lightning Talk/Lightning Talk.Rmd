@@ -1,0 +1,336 @@
+---
+title: "Tutorial"
+output: learnr::tutorial
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(grader)
+
+knitr::opts_chunk$set(message = FALSE)
+
+learnr::tutorial_options(exercise.timelimit = 60,
+                         exercise.checker = grader::grade_learnr)
+```
+
+## tl;dr
+
+### Check the Code
+
+`sqrt(log(2))`
+
+````markdown
+`r ''````{r strict, exercise = TRUE}
+sqrt(log(3))
+```
+
+`r ''````{r strict-solution}
+sqrt(log(2))
+```
+
+`r ''````{r strict-check}
+grader::check_code("Good job. Don't worry, things will soon get harder.")
+```
+````
+
+```{r strict, exercise = TRUE}
+sqrt(log(3))
+```
+
+```{r strict-hint-1}
+"You can take the log with `log()`"
+```
+
+```{r strict-hint-2}
+"You can take the square root with `sqrt()`"
+```
+
+```{r strict-solution}
+sqrt(log(2))
+```
+
+```{r strict-check}
+grader::check_code("Good job. Don't worry, things will soon get harder.")
+```
+
+### Check the result
+
+````markdown
+`r ''````{r result, exercise = TRUE}
+sqrt(log(3))
+```
+
+`r ''````{r result-check}
+grader::check_result(
+  pass_if(~ round(.result, 3) == .833, 'You got it correct!'),
+  fail_if(~ round(.result, 3) == 1.048, 'You passed in 3 instead of 2'),
+  correct = "wo0t!"
+)
+```
+````
+
+```{r result, exercise = TRUE}
+sqrt(log(2 + 1))
+```
+
+```{r result-hint-1}
+"You can take the log with `log()`"
+```
+
+```{r result-hint-2}
+"You can take the square root with `sqrt()`"
+```
+
+```{r result-check}
+grader::check_result(
+  pass_if(~ round(.result, 3) == .833, 'You got it correct!'),
+  fail_if(~ round(.result, 3) == 1.048, 'You passed in 3 instead of 2'),
+  correct = "wo0t!"
+)
+```
+
+## Billboard Rankings
+
+Recall the 3 features of [tidy data][wickham2013]
+
+[wickham2013]: https://vita.had.co.nz/papers/tidy-data.pdf
+
+1. Each variable forms a column
+2. Each observation forms a row
+3. Each type of observational unit forms a table
+
+Data is downloaded into the `data` folder:
+
+```bash
+wget https://raw.githubusercontent.com/hadley/tidy-data/master/data/billboard.csv
+```
+
+```{r, message=FALSE}
+library(readr)
+library(here)
+
+billboard <- readr::read_csv('https://raw.githubusercontent.com/hadley/tidy-data/master/data/billboard.csv')
+billboard[1:10, 1:10]
+```
+
+What's wrong with this? Well... it violates the first rule of tidy data,
+the week ranking variable is spread out across columns, not in a single column.
+We want a single column for the week number for a particular song,
+and it's ranking for that week.
+
+E.g.,
+
+```
+# A tibble: 10 x 10
+    year artist.inverted    track                     ... week        rank
+   <dbl> <chr>              <chr>                     ... <chr>       <dbl>
+ 1  2000 Destiny's Child    Independent Women Part I  ... x1st.week   78
+ 2  2000 Destiny's Child    Independent Women Part I  ... x2nd.week   63
+ 3  2000 Destiny's Child    Independent Women Part I  ... x2nd.week   49
+```
+
+### Tidy the data -- check_code
+
+If we put in `spread` instead of the correct solution`, `gather`,
+we will get an error about passing `spread` the wrong function parameters
+
+
+```{r ebepjqxhskvqnspn, exercise = TRUE}
+library(tidyr)
+
+billboard_tidy <- spread(billboard, "week", "rank", x1st.week:x76th.week)
+```
+
+```{r ebepjqxhskvqnspn-hint-1}
+# hint text
+"Use the gather function from tidyr"
+```
+
+```{r ebepjqxhskvqnspn-hint-2}
+# hint text
+"You can use tidyselect notation to select the columns, e.g., col1:col76"
+```
+
+```{r ebepjqxhskvqnspn-solution}
+# solution code
+billboard_tidy <- gather(billboard, "week", "rank", x1st.week:x76th.week)
+```
+
+```{r ebepjqxhskvqnspn-check}
+# check code
+grader::check_code()
+```
+
+## Checking results
+
+What if the student just finds another way?
+
+We can just check the result, not the code.
+
+```{r ytnsfpdawbhorgwb, exercise = TRUE}
+# student code
+9 / 3
+```
+
+```{r ytnsfpdawbhorgwb-check}
+grader::check_result(
+  grader::pass_if(~ .result == 3, "Yay!")
+)
+```
+
+##### Tidy Example -- check result
+
+Student code below does not match the solution code, but the results are the same.
+
+```r
+solution <- tidyr::gather(head(billboard), "week", "rank", x1st.week:x76th.week)
+```
+
+```{r zuzwislfkfnsoesa, exercise = TRUE}
+# student code
+user <- reshape2::melt(head(billboard),
+                       id.vars = c("year", "artist.inverted", "track", "time",
+                                   "genre", "date.entered", "date.peaked"),
+                       variable.name = "week",
+                       value.name = "rank",
+                       factorAsStrings = TRUE)
+user$week <- as.character(user$week)
+```
+
+```{r zuzwislfkfnsoesa-check}
+solution <- tidyr::gather(head(billboard), "week", "rank", x1st.week:x76th.week)
+
+grader::check_result(
+  grader::pass_if(~ all.equal(tibble::as_tibble(.result), tibble::as_tibble(solution)), 'Correct!')
+)
+```
+
+## Clean data
+
+So we have a tidy dataset
+
+```{r}
+billboard_tidy <- tidyr::gather(billboard, "week", "rank", x1st.week:x76th.week)
+billboard_tidy
+```
+
+But we want the week to be a numeric, not a string.
+
+## Functions
+
+Write a function that takes a string and extracts the numbers
+
+
+### Using check result  (Works only for correct solution)
+
+```{r}
+library(stringr)
+```
+
+```{r wdyaoutxcvxxyjxa, exercise = TRUE}
+# student code
+my_extract_week <- function(string) {
+  as.numeric(stringr::str_extract(string, '\\d+'))
+}
+```
+
+```{r wdyaoutxcvxxyjxa-check}
+
+grader::check_result(
+  grader::pass_if(~ .result('x1st.week') == 1, 'hoorah'),
+  grader::pass_if(~ .result('x72nd.week') == 72, 'yipee')
+)
+```
+
+### Using check_code (Works only for correct solution)
+
+```{r aoqqmwwnkvzikirk, exercise = TRUE}
+# student code
+my_extract_week <- function(string) {
+  as.numeric(stringr::str_extract(string, '\\d+'))
+}
+```
+
+```{r aoqqmwwnkvzikirk-solution}
+# solution code
+my_extract_week <- function(string) {
+  as.numeric(stringr::str_extract(string, '\\d+'))
+}
+```
+
+```{r aoqqmwwnkvzikirk-check}
+# check code
+grader::check_code()
+```
+
+## Apply the function
+
+```{r}
+library(stringr)
+library(readr)
+library(tidyr)
+library(here)
+
+
+extract_week <- function(string) {
+  as.numeric(stringr::str_extract(string, '\\d+'))
+}
+
+billboard_tidy <- tidyr::gather(billboard, "week", "rank", x1st.week:x76th.week)
+billboard_tidy
+```
+
+```{r}
+library(dplyr)
+library(purrr)
+```
+
+```{r otsymvcnkuaybeey, exercise = TRUE}
+# student code
+
+billboard_tidy %>%
+  dplyr::mutate(week_num = purrr::map_dbl(week, extract_week))
+```
+
+
+```{r otsymvcnkuaybeey-solution}
+# solution code
+billboard_tidy %>%
+  dplyr::mutate(week_num = purrr::map_dbl(week, extract_week))
+```
+
+```{r otsymvcnkuaybeey-check}
+# check code
+grader::check_code()
+```
+
+## Fit model
+
+Let's go fit a model
+
+```{r}
+df <- billboard_tidy %>%
+  dplyr::mutate(week_num = purrr::map_dbl(week, extract_week))
+```
+
+Can check results by comparing coefficients:
+
+```{r ckojrogkhwnygvxp, exercise = TRUE}
+# student code
+fit <- lm(rank ~ week_num, data = df)
+```
+
+```
+grader::check_result(
+  grader::pass_if(~ all(round(broom::tidy(.result)$estimate, 2) == c(64.13, -1.14)), 'winner winner chicken dinner')
+)
+```
+
+```{r ckojrogkhwnygvxp-check}
+library(broom)
+
+grader::check_result(
+  grader::pass_if(~ all(round(broom::tidy(.result)$estimate, 2) == c(64.13, -1.14)), 'winner winner chicken dinner')
+)
+```
